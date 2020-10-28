@@ -1,3 +1,6 @@
+// eslint-disable-next-line no-unused-vars
+import css from './index.css';
+
 // eslint-disable-next-line require-jsdoc
 import Uploader from './uploader';
 import buttonIcon from './svg/button-icon.svg';
