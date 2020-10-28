@@ -1,12 +1,14 @@
 // eslint-disable-next-line no-unused-vars
 import css from './index.css';
 
+import ToolboxIcon from './svg/toolbox.svg';
+
 // eslint-disable-next-line require-jsdoc
 import Uploader from './uploader';
 import buttonIcon from './svg/button-icon.svg';
 
 // eslint-disable-next-line require-jsdoc
-export default class SimpleCarousel {
+export default class Carousel {
   /**
    * @param {CarousellData} data - previously saved data
    * @param {CarouselConfig} config - user config for Tool
@@ -71,8 +73,8 @@ export default class SimpleCarousel {
    */
   static get toolbox() {
     return {
-      title: 'SimpleCarousel',
-      icon: '<svg width="17" height="15" viewBox="0 0 336 276" xmlns="http://www.w3.org/2000/svg"><path d="M291 150V79c0-19-15-34-34-34H79c-19 0-34 15-34 34v42l67-44 81 72 56-29 42 30zm0 52l-43-30-56 30-81-67-66 39v23c0 19 15 34 34 34h178c17 0 31-13 34-29zM79 0h178c44 0 79 35 79 79v118c0 44-35 79-79 79H79c-44 0-79-35-79-79V79C0 35 35 0 79 0z"/></svg>'
+      icon: ToolboxIcon,
+      title: 'Carousel',
     };
   }
 
@@ -101,7 +103,6 @@ export default class SimpleCarousel {
     this.list.appendChild(this.addButton);
     this.wrapper.appendChild(this.list);
     if (this.data.length > 0) {
-      console.log('load_item render', this.data);
       for (const load of this.data) {
         const loadItem = this.creteNewItem(load.url, load.caption);
 
@@ -212,9 +213,6 @@ export default class SimpleCarousel {
   onUpload(response) {
     if (response.success && response.file) {
       // Берем последний созданный элемент и ставим изображение с сервера
-      console.log(this.list);
-      console.log(this.list.childNodes.length);
-      console.log(this.list.childNodes.length - 1);
       this._createImage(response.file.url, this.list.childNodes[this.list.childNodes.length - 2].firstChild, '', this.list.childNodes[this.list.childNodes.length - 2].firstChild.childNodes[1]);
       this.list.childNodes[this.list.childNodes.length - 2].firstChild.childNodes[2].style.backgroundImage = '';
       this.list.childNodes[this.list.childNodes.length - 2].firstChild.firstChild.value = response.file.url;
@@ -231,8 +229,6 @@ export default class SimpleCarousel {
    * @param {string} errorText
    */
   uploadingFailed(errorText) {
-    console.log('Gallery : uploading failed because of', errorText);
-
     this.api.notifier.show({
       message: 'Can not upload an image, try another',
       style: 'error'
@@ -254,9 +250,7 @@ export default class SimpleCarousel {
       onPreview: (src) => {
         const newItem = this.creteNewItem('', '');
         newItem.firstChild.lastChild.style.backgroundImage = `url(${src})`;
-        console.log('preload', newItem.firstChild.lastChild);
         this.list.insertBefore(newItem, this.addButton);
-        console.log(src);
       }
     });
   }

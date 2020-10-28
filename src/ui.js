@@ -118,7 +118,6 @@ export default class Ui {
     addButton.innerHTML = this.config.buttonContent || `${buttonIcon} Add Image`;
     addButton.addEventListener('click', () => {
       this.nodes.list.appendChild();
-      console.log(this.nodes.list);
     });
     return addButton;
   }
