@@ -10,12 +10,23 @@ import buttonIcon from './svg/button-icon.svg';
 // eslint-disable-next-line require-jsdoc
 export default class Carousel {
   /**
+   * Notify core that read-only mode is supported
+   *
+   * @returns {boolean}
+   */
+  static get isReadOnlySupported() {
+    return true;
+  }
+
+  /**
    * @param {CarousellData} data - previously saved data
    * @param {CarouselConfig} config - user config for Tool
    * @param {object} api - Editor.js API
+   * @param {boolean} tool.readOnly - read-only mode flag
    */
-  constructor({ data, config, api }) {
+  constructor({ data, config, api, readOnly }) {
     this.api = api;
+    this.readOnly = readOnly;
     this.data = data;
     this.IconClose = '<svg class="icon icon--cross" width="12px" height="12px"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#cross"></use></svg>';
     this.config = {
@@ -156,14 +167,18 @@ export default class Carousel {
     const imagePreloader = make('div', [ this.CSS.imagePreloader ]);
 
     imageUrl.value = url;
+
+    
     removeBtn.innerHTML = this.IconClose;
     removeBtn.addEventListener('click', () => {
       block.remove();
     });
     removeBtn.style.display = 'none';
 
-    item.appendChild(imageUrl);
-    item.appendChild(removeBtn);
+    if (!this.readOnly) {
+      item.appendChild(imageUrl);
+      item.appendChild(removeBtn);
+    }
     block.appendChild(item);
     /*
      * If data already yet
@@ -191,6 +206,9 @@ export default class Carousel {
   _createImage(url, item, captionText, removeBtn) {
     const image = document.createElement('img');
     const caption = make('input', [this.CSS.caption, this.CSS.input]);
+    if (this.readOnly) {
+      caption.setAttribute('disabled', 'disabled');
+    }
 
     image.src = url;
     if (captionText) {
@@ -267,7 +285,9 @@ export default class Carousel {
     addButton.addEventListener('click', () => {
       this.onSelectFile();
     });
-    block.appendChild(addButton);
+    if (!this.readOnly) {
+      block.appendChild(addButton);
+    }
 
     return block;
   }
