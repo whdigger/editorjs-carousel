@@ -19,6 +19,28 @@ export default class Uploader {
   }
 
   /**
+   * Handle clicks on encode file button
+   * @param {function} onPreview - callback fired when preview is ready
+   */
+  encodeSelectedFile({ onPreview }) {
+    const preparePreview = function (file) {
+      const reader = new FileReader();
+
+      reader.readAsDataURL(file);
+      reader.fileName = file.name;
+      reader.onload = (e) => {
+        onPreview(e.target.result, e.target.fileName);
+      };
+    };
+
+    ajax.selectFiles({ accept: this.config.types,multiple: this.config.multiple }).then((files) => {
+      for (const file of files) {
+        preparePreview(file);
+      }
+    });
+  }
+
+  /**
    * Handle clicks on the upload file button
    * @fires ajax.transport()
    * @param {function} onPreview - callback fired when preview is ready

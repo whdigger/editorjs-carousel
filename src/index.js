@@ -40,6 +40,9 @@ export default class Carousel {
       buttonContent: config.buttonContent || '',
       uploader: config.uploader || undefined
     };
+
+    this.encodeFile = !this.config.endpoints.byFile;
+
     /**
      * Module for file uploading
      */
@@ -134,12 +137,86 @@ export default class Carousel {
         if (item.firstChild.value) {
           data.push({
             url: item.firstChild.value,
+            file: {
+              encode: item.firstChild.getAttribute('data-encode'),
+              name: item.firstChild.getAttribute('data-name'),
+            },
             caption: item.lastChild.value
           });
         }
       }
     }
     return data;
+  }
+
+  /**
+   * Specify paste substitutes
+   *
+   * @see {@link https://github.com/codex-team/editor.js/blob/master/docs/tools.md#paste-handling}
+   * @returns {{tags: string[], patterns: object<string, RegExp>, files: {extensions: string[], mimeTypes: string[]}}}
+   */
+  static get pasteConfig() {
+    return {
+      /**
+       * Paste HTML into Editor
+       */
+      tags: ['img'],
+
+      /**
+       * Paste URL of image into the Editor
+       */
+      patterns: {
+        image: /https?:\/\/\S+\.(gif|jpe?g|tiff|png)$/i,
+      },
+
+      /**
+       * Drag n drop file from into the Editor
+       */
+      files: {
+        mimeTypes: ['image/*'],
+      },
+    };
+  }
+
+  /**
+   * Specify paste handlers
+   *
+   * @public
+   * @see {@link https://github.com/codex-team/editor.js/blob/master/docs/tools.md#paste-handling}
+   * @param {CustomEvent} event - editor.js custom paste event
+   *                              {@link https://github.com/codex-team/editor.js/blob/master/types/tools/paste-events.d.ts}
+   * @returns {void}
+   */
+  async onPaste(event) {
+    switch (event.type) {
+      case 'tag': {
+        const image = event.detail.data;
+
+        /** Images from PDF */
+        if (/^blob:/.test(image.src)) {
+          const response = await fetch(image.src);
+          const file = await response.blob();
+
+          this.uploadFile(file);
+          break;
+        }
+
+        this.uploadUrl(image.src);
+        break;
+      }
+      case 'pattern': {
+        const url = event.detail.data;
+
+        this.uploadUrl(url);
+        break;
+      }
+      case 'file': {
+        const file = event.detail.file;
+
+        this.uploadFile(file);
+        break;
+      }
+    }
   }
 
   /**
@@ -164,7 +241,7 @@ export default class Carousel {
     const block = make('div', [ this.CSS.block ]);
     const item = make('div', [ this.CSS.item ]);
     const removeBtn = make('div', [ this.CSS.removeBtn ]);
-    const imageUrl = make('input', [ this.CSS.inputUrl ]);
+    const imageUrl = make('input', [ this.CSS.inputUrl ],{ 'data-encode': this.encodeFile });
     const imagePreloader = make('div', [ this.CSS.imagePreloader ]);
 
     imageUrl.value = url;
@@ -230,20 +307,17 @@ export default class Carousel {
    */
   async onUpload(response) {
     if (response.success && response.files) {
-
       console.log(response.files.length);
       await new Promise(resolve => setTimeout(resolve, 1000));
       for (let i = 0; i < response.files.length; i++) {
         let file = response.files[response.files.length - 1 - i];
         // Берем последний созданный элемент и ставим изображение с сервера
         let lastElem = this.list.childNodes.length - (2 + i);
-        console.log(this.list.childNodes.length, lastElem);
         this._createImage(file.url, this.list.childNodes[lastElem].firstChild, '', this.list.childNodes[lastElem].firstChild.childNodes[1]);
         this.list.childNodes[lastElem].firstChild.childNodes[2].style.backgroundImage = '';
         this.list.childNodes[lastElem].firstChild.firstChild.value = file.url;
         this.list.childNodes[lastElem].firstChild.classList.add('carousel-item--empty');
       }
-
     } else {
       this.uploadingFailed('incorrect response: ' + JSON.stringify(response));
     }
@@ -272,14 +346,27 @@ export default class Carousel {
 
   // eslint-disable-next-line require-jsdoc
   onSelectFile() {
-    // Создаем элемент
-    this.uploader.uploadSelectedFile({
-      onPreview: (src) => {
-        const newItem = this.creteNewItem('', '');
-        newItem.firstChild.lastChild.style.backgroundImage = `url(${src})`;
-        this.list.insertBefore(newItem, this.addButton);
-      }
-    });
+    if (this.encodeFile) {
+      this.uploader.encodeSelectedFile({
+        onPreview: (src, filename) => {
+          const newItem = this.creteNewItem(src, '');
+          newItem.firstChild.firstChild.setAttribute('data-name', filename);
+          console.log(newItem.firstChild.firstChild);
+
+          newItem.firstChild.classList.add('carousel-item--empty');
+          this.list.insertBefore(newItem, this.addButton);
+        }
+      });
+    } else {
+      // Создаем элемент
+      this.uploader.uploadSelectedFile({
+        onPreview: (src) => {
+          const newItem = this.creteNewItem('', '');
+          newItem.firstChild.lastChild.style.backgroundImage = `url(${src})`;
+          this.list.insertBefore(newItem, this.addButton);
+        }
+      });
+    }
   }
 
   /**
@@ -320,7 +407,7 @@ export const make = function make(tagName, classNames = null, attributes = {}) {
   }
 
   for (const attrName in attributes) {
-    el[attrName] = attributes[attrName];
+    el.setAttribute(attrName, attributes[attrName]);
   }
 
   return el;
