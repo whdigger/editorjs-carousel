@@ -35,6 +35,7 @@ export default class Carousel {
       additionalRequestHeaders: config.additionalRequestHeaders || {},
       field: config.field || 'image',
       types: config.types || 'image/*',
+      multiple: config.multiple || false,
       captionPlaceholder: config.captionPlaceholder || 'Caption',
       buttonContent: config.buttonContent || '',
       uploader: config.uploader || undefined
@@ -168,7 +169,6 @@ export default class Carousel {
 
     imageUrl.value = url;
 
-    
     removeBtn.innerHTML = this.IconClose;
     removeBtn.addEventListener('click', () => {
       block.remove();
@@ -228,13 +228,22 @@ export default class Carousel {
    *
    * @param {Response} response
    */
-  onUpload(response) {
-    if (response.success && response.file) {
-      // Берем последний созданный элемент и ставим изображение с сервера
-      this._createImage(response.file.url, this.list.childNodes[this.list.childNodes.length - 2].firstChild, '', this.list.childNodes[this.list.childNodes.length - 2].firstChild.childNodes[1]);
-      this.list.childNodes[this.list.childNodes.length - 2].firstChild.childNodes[2].style.backgroundImage = '';
-      this.list.childNodes[this.list.childNodes.length - 2].firstChild.firstChild.value = response.file.url;
-      this.list.childNodes[this.list.childNodes.length - 2].firstChild.classList.add('carousel-item--empty');
+  async onUpload(response) {
+    if (response.success && response.files) {
+
+      console.log(response.files.length);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      for (let i = 0; i < response.files.length; i++) {
+        let file = response.files[response.files.length - 1 - i];
+        // Берем последний созданный элемент и ставим изображение с сервера
+        let lastElem = this.list.childNodes.length - (2 + i);
+        console.log(this.list.childNodes.length, lastElem);
+        this._createImage(file.url, this.list.childNodes[lastElem].firstChild, '', this.list.childNodes[lastElem].firstChild.childNodes[1]);
+        this.list.childNodes[lastElem].firstChild.childNodes[2].style.backgroundImage = '';
+        this.list.childNodes[lastElem].firstChild.firstChild.value = file.url;
+        this.list.childNodes[lastElem].firstChild.classList.add('carousel-item--empty');
+      }
+
     } else {
       this.uploadingFailed('incorrect response: ' + JSON.stringify(response));
     }

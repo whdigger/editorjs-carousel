@@ -41,10 +41,13 @@ export default class Uploader {
 
     // custom uploading
     if (this.config.uploader && typeof this.config.uploader.uploadByFile === 'function') {
-      upload = ajax.selectFiles({ accept: this.config.types }).then((files) => {
-        preparePreview(files[0]);
+      upload = ajax.selectFiles({ accept: this.config.types,multiple: this.config.multiple }).then((files) => {
 
-        const customUpload = this.config.uploader.uploadByFile(files[0]);
+        for (const file of files) {
+          preparePreview(file);
+        }
+
+        const customUpload = this.config.uploader.uploadByFile(files);
 
         if (!isPromise(customUpload)) {
           console.warn('Custom uploader method uploadByFile should return a Promise');
@@ -60,8 +63,11 @@ export default class Uploader {
         data: this.config.additionalRequestData,
         accept: this.config.types,
         headers: this.config.additionalRequestHeaders,
+        multiple: this.config.multiple,
         beforeSend: (files) => {
-          preparePreview(files[0]);
+          for (const file of files) {
+            preparePreview(file);
+          }
         },
         fieldName: this.config.field
       }).then((response) => response.body);

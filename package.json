@@ -15,7 +15,8 @@
   "main": "./dist/bundle.js",
   "scripts": {
     "build": "webpack --mode production",
-    "build:dev": "webpack --mode development --watch"
+    "build:dev": "webpack --mode development --watch",
+    "server": "node ./dev/server.js"
   },
   "author": {
     "name": "vietlongn",

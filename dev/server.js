@@ -23,6 +23,8 @@ class ServerExample {
   constructor({port, fieldName}) {
     this.uploadDir = __dirname + '/\.tmp';
     this.fieldName = fieldName;
+    this.files = [];
+
     this.server = http.createServer((req, res) => {
       this.onRequest(req, res);
     }).listen(port);
@@ -86,14 +88,18 @@ class ServerExample {
 
     this.getForm(request)
       .then(({files}) => {
-        let image = files[this.fieldName] || {};
+        let responseFiles = [];
 
+        for (const file of files) {
+          responseFiles.push({
+            url: file.path,
+            name: file.name,
+            size: file.size
+          });
+        }
+        // console.log(responseFiles);
         responseJson.success = 1;
-        responseJson.file = {
-          url: image.path,
-          name: image.name,
-          size: image.size
-        };
+        responseJson.files = responseFiles;
       })
       .catch((error) => {
         console.log('Uploading error', error);
@@ -145,16 +151,23 @@ class ServerExample {
   getForm(request) {
     return new Promise((resolve, reject) => {
       const form = new formidable.IncomingForm();
+      let files = [], fields = [];
 
       form.uploadDir = this.uploadDir;
       form.keepExtensions = true;
 
-      form.parse(request, (err, fields, files) => {
+      form
+          .on('field', function (field, value) {
+            fields.push(value);
+          })
+          .on('file', function (field, file) {
+            files.push(file);
+          });
+
+      form.parse(request, (err) => {
         if (err) {
           reject(err);
         } else {
-          console.log('fields', fields);
-          console.log('files', files);
           resolve({files, fields});
         }
       });
