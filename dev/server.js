@@ -18,9 +18,12 @@ const { parse } = require('querystring');
 const fs = require('fs');
 const request = require('request');
 const crypto = require('crypto');
+const env = require('dotenv');
 
 class ServerExample {
   constructor({port, fieldName}) {
+    env.config();
+
     this.uploadDir = __dirname + '/\.tmp';
     this.fieldName = fieldName;
     this.files = [];
@@ -36,6 +39,8 @@ class ServerExample {
     this.server.on('error', (error) => {
       console.log('Failed to run server', error);
     });
+
+    this.rootDir = process.env.ROOT_DIR || '';
   }
 
   /**
@@ -91,8 +96,10 @@ class ServerExample {
         let responseFiles = [];
 
         for (const file of files) {
+          let filePath = file.path.replace(this.rootDir, '');
+
           responseFiles.push({
-            url: file.path,
+            url: filePath,
             name: file.name,
             size: file.size
           });
@@ -121,18 +128,20 @@ class ServerExample {
     };
 
     this.getForm(request)
-      .then(({files, fields}) => {
-        let url = fields.url;
+      .then(async ({files, fields}) => {
+        let responseFiles = [];
 
-        let filename = this.uploadDir + '/' + this.md5(url) + '.png';
+        for (const url of fields.url) {
+          let filename = this.uploadDir + '/' + this.md5(url) + '.png';
+          const path = await this.downloadImage(url, filename);
+          let filePath = path.replace(this.rootDir, '');
 
-        return this.downloadImage(url, filename)
-          .then((path) => {
-            responseJson.success = 1;
-            responseJson.file = {
-              url: path
-            };
+          responseFiles.push({
+            url: filePath,
           });
+        }
+        responseJson.success = 1;
+        responseJson.files = responseFiles;
       })
       .catch((error) => {
         console.log('Uploading error', error);
@@ -151,14 +160,14 @@ class ServerExample {
   getForm(request) {
     return new Promise((resolve, reject) => {
       const form = new formidable.IncomingForm();
-      let files = [], fields = [];
+      let files = [], fields = {};
 
       form.uploadDir = this.uploadDir;
       form.keepExtensions = true;
 
       form
           .on('field', function (field, value) {
-            fields.push(value);
+            fields[field] = value;
           })
           .on('file', function (field, file) {
             files.push(file);

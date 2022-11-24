@@ -10,7 +10,7 @@ export default class Ui {
   /**
    * @param {object} api - Editor.js API
    * @param {ImageConfig} config - user config
-   * @param {function} onSelectFile - callback for clicks on Select file buttor
+   * @param {Function} onSelectFile - callback for clicks on Select file button
    * @param {boolean} ui.readOnly - read-only mode flag
    */
   constructor({ api, config, onSelectFile, readOnly }) {
@@ -28,8 +28,8 @@ export default class Ui {
       imageEl: undefined,
       imagePreloader: make('div', this.CSS.imagePreloader),
       caption: make('div', [this.CSS.input, this.CSS.caption], {
-        contentEditable: !this.readOnly
-      })
+        contentEditable: !this.readOnly,
+      }),
     };
 
     /**
@@ -59,7 +59,8 @@ export default class Ui {
 
   /**
    * CSS classes
-   * @constructor
+   *
+   * @class
    */
   get CSS() {
     return {
@@ -75,7 +76,7 @@ export default class Ui {
       imageContainer: 'image-tool__image',
       imagePreloader: 'image-tool__image-preloader',
       imageEl: 'image-tool__image-picture',
-      caption: 'image-tool__caption'
+      caption: 'image-tool__caption',
     };
   };
 
@@ -84,19 +85,20 @@ export default class Ui {
    * - empty
    * - uploading
    * - filled
-   * @return {{EMPTY: string, UPLOADING: string, FILLED: string}}
+   *
+   * @returns {{EMPTY: string, UPLOADING: string, FILLED: string}}
    */
   static get status() {
     return {
       EMPTY: 'empty',
       UPLOADING: 'loading',
-      FILLED: 'filled'
+      FILLED: 'filled',
     };
   }
 
   /**
    * @param {ImageToolData} toolData
-   * @return {HTMLDivElement}
+   * @returns {HTMLDivElement}
    */
   render(toolData) {
     if (!toolData.file || Object.keys(toolData.file).length === 0) {
@@ -106,6 +108,7 @@ export default class Ui {
       // Если есть изображение то статус загрузка
       this.toggleStatus(Ui.status.UPLOADING);
     }
+
     return this.nodes.wrapper;
   }
 
@@ -113,20 +116,24 @@ export default class Ui {
 
   /**
    * Creates upload-file button
-   * @return {Element}
+   *
+   * @returns {Element}
    */
   createAddButton() {
     const addButton = make('div', [ this.CSS.button ]);
+
     addButton.innerHTML = this.config.buttonContent || `${buttonIcon} Add Image`;
     addButton.addEventListener('click', () => {
       this.nodes.list.appendChild();
     });
+
     return addButton;
   }
 
   /**
    * Creates upload-file button
-   * @return {Element}
+   *
+   * @returns {Element}
    */
   createFileButton() {
     const button = make('div', [ this.CSS.button ]);
@@ -142,6 +149,7 @@ export default class Ui {
 
   /**
    * Shows uploading preloader
+   *
    * @param {string} src - preview source
    */
   showPreloader(src) {
@@ -160,6 +168,7 @@ export default class Ui {
 
   /**
    * Shows an image
+   *
    * @param {string} url
    */
   fillImage(url) {
@@ -169,13 +178,14 @@ export default class Ui {
     const tag = /\.mp4$/.test(url) ? 'VIDEO' : 'IMG';
 
     const attributes = {
-      src: url
+      src: url,
     };
 
     /**
      * We use eventName variable because IMG and VIDEO tags have different event to be called on source load
      * - IMG: load
      * - VIDEO: loadeddata
+     *
      * @type {string}
      */
     let eventName = 'load';
@@ -186,6 +196,7 @@ export default class Ui {
     if (tag === 'VIDEO') {
       /**
        * Add attributes for playing muted mp4 as a gif
+       *
        * @type {boolean}
        */
       attributes.autoplay = true;
@@ -195,6 +206,7 @@ export default class Ui {
 
       /**
        * Change event to be listened
+       *
        * @type {string}
        */
       eventName = 'loadeddata';
@@ -202,6 +214,7 @@ export default class Ui {
 
     /**
      * Compose tag with defined attributes
+     *
      * @type {Element}
      */
     this.nodes.imageEl = make(tag, this.CSS.imageEl, attributes);
@@ -225,6 +238,7 @@ export default class Ui {
 
   /**
    * Shows caption input
+   *
    * @param {string} text - caption text
    */
   fillCaption(text) {
@@ -235,6 +249,7 @@ export default class Ui {
 
   /**
    * Changes UI status
+   *
    * @param {string} status - see {@link Ui.status} constants
    */
   toggleStatus(status) {
@@ -248,6 +263,7 @@ export default class Ui {
 
   /**
    * Apply visual representation of activated tune
+   *
    * @param {string} tuneName - one of available tunes {@link Tunes.tunes}
    * @param {boolean} status - true for enable, false for disable
    */
@@ -260,9 +276,9 @@ export default class Ui {
  * Helper for making Elements with attributes
  *
  * @param  {string} tagName           - new Element tag name
- * @param  {array|string} classNames  - list or name of CSS class
- * @param  {Object} attributes        - any attributes
- * @return {Element}
+ * @param  {Array|string} classNames  - list or name of CSS class
+ * @param  {object} attributes        - any attributes
+ * @returns {Element}
  */
 export const make = function make(tagName, classNames = null, attributes = {}) {
   const el = document.createElement(tagName);

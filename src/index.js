@@ -3,6 +3,34 @@ import css from './index.css';
 
 import ToolboxIcon from './svg/toolbox.svg';
 
+/**
+ * @typedef {object} ImageToolData
+ * @description Image Tool's input and output data format
+ * @property {string} caption — image caption
+ * @property {boolean} withBorder - should image be rendered with border
+ * @property {boolean} withBackground - should image be rendered with background
+ * @property {boolean} stretched - should image be stretched to full width of container
+ * @property {object} file — Image file data returned from backend
+ * @property {string} file.url — image URL
+ */
+
+/**
+ * @typedef {object} ImageConfig
+ * @description Config supported by Tool
+ * @property {object} endpoints - upload endpoints
+ * @property {string} endpoints.byFile - upload by file
+ * @property {string} endpoints.byUrl - upload by URL
+ * @property {string} field - field name for uploaded image
+ * @property {string} types - available mime-types
+ * @property {string} captionPlaceholder - placeholder for Caption field
+ * @property {object} additionalRequestData - any data to send with requests
+ * @property {object} additionalRequestHeaders - allows to pass custom headers with Request
+ * @property {string} buttonContent - overrides for Select File button
+ * @property {object} [uploader] - optional custom uploader
+ * @property {function(File): Promise.<UploadResponseFormat>} [uploader.uploadByFile] - method that upload image by File
+ * @property {function(string): Promise.<UploadResponseFormat>} [uploader.uploadByUrl] - method that upload image by URL
+ */
+
 // eslint-disable-next-line require-jsdoc
 import Uploader from './uploader';
 import buttonIcon from './svg/button-icon.svg';
@@ -41,7 +69,7 @@ export default class Carousel {
       uploader: config.uploader || undefined
     };
 
-    this.encodeFile = !this.config.endpoints.byFile;
+    this.typeUpload = 'upload';
 
     /**
      * Module for file uploading
@@ -49,6 +77,7 @@ export default class Carousel {
     this.uploader = new Uploader({
       config: this.config,
       onUpload: (response) => this.onUpload(response),
+      onUploadAfterPreview: (response) => this.onUploadAfterPreview(response),
       onError: (error) => this.uploadingFailed(error)
     });
   }
@@ -138,7 +167,7 @@ export default class Carousel {
           data.push({
             url: item.firstChild.value,
             file: {
-              encode: item.firstChild.getAttribute('data-encode'),
+              type: item.firstChild.getAttribute('data-type'),
               name: item.firstChild.getAttribute('data-name'),
             },
             caption: item.lastChild.value
@@ -158,15 +187,11 @@ export default class Carousel {
   static get pasteConfig() {
     return {
       /**
-       * Paste HTML into Editor
-       */
-      tags: ['img'],
-
-      /**
        * Paste URL of image into the Editor
        */
       patterns: {
-        image: /https?:\/\/\S+\.(gif|jpe?g|tiff|png)$/i,
+        // eslint-disable-next-line
+        image: /([a-z\-_0-9\/\:\.]*\.(gif|jpe?g|tiff|png)(\s+)?)+$/gm,
       },
 
       /**
@@ -189,31 +214,20 @@ export default class Carousel {
    */
   async onPaste(event) {
     switch (event.type) {
-      case 'tag': {
-        const image = event.detail.data;
-
-        /** Images from PDF */
-        if (/^blob:/.test(image.src)) {
-          const response = await fetch(image.src);
-          const file = await response.blob();
-
-          this.uploadFile(file);
-          break;
-        }
-
-        this.uploadUrl(image.src);
-        break;
-      }
       case 'pattern': {
-        const url = event.detail.data;
+        let url = event.detail.data;
 
-        this.uploadUrl(url);
+        url = url.replace(/  +/g, ' ');
+        let listUrl = url.split(' ');
+
+        this.uploadUrl(listUrl);
         break;
       }
       case 'file': {
         const file = event.detail.file;
 
-        this.uploadFile(file);
+        console.log('event ', file);
+        // this.uploadFile(file);
         break;
       }
     }
@@ -241,7 +255,7 @@ export default class Carousel {
     const block = make('div', [ this.CSS.block ]);
     const item = make('div', [ this.CSS.item ]);
     const removeBtn = make('div', [ this.CSS.removeBtn ]);
-    const imageUrl = make('input', [ this.CSS.inputUrl ],{ 'data-encode': this.encodeFile });
+    const imageUrl = make('input', [ this.CSS.inputUrl ],{ 'data-type': this.typeUpload });
     const imagePreloader = make('div', [ this.CSS.imagePreloader ]);
 
     imageUrl.value = url;
@@ -305,10 +319,9 @@ export default class Carousel {
    *
    * @param {Response} response
    */
-  async onUpload(response) {
+  onUploadAfterPreview(response) {
+
     if (response.success && response.files) {
-      console.log(response.files.length);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       for (let i = 0; i < response.files.length; i++) {
         let file = response.files[response.files.length - 1 - i];
         // Берем последний созданный элемент и ставим изображение с сервера
@@ -317,6 +330,28 @@ export default class Carousel {
         this.list.childNodes[lastElem].firstChild.childNodes[2].style.backgroundImage = '';
         this.list.childNodes[lastElem].firstChild.firstChild.value = file.url;
         this.list.childNodes[lastElem].firstChild.classList.add('carousel-item--empty');
+      }
+    } else {
+      this.uploadingFailed('incorrect response: ' + JSON.stringify(response));
+    }
+  }
+
+  /**
+   * File uploading callback
+   * @private
+   *
+   * @param {Response} response
+   */
+  onUpload(response) {
+    // console.log(response.files);
+    if (response.success && response.files) {
+      for (const file of response.files) {
+        const newItem = this.creteNewItem(file.url, '');
+        if (file.name) {
+          newItem.firstChild.firstChild.setAttribute('data-name', file.name);
+        }
+        newItem.firstChild.classList.add('carousel-item--empty');
+        this.list.insertBefore(newItem, this.addButton);
       }
     } else {
       this.uploadingFailed('incorrect response: ' + JSON.stringify(response));
@@ -346,17 +381,9 @@ export default class Carousel {
 
   // eslint-disable-next-line require-jsdoc
   onSelectFile() {
-    if (this.encodeFile) {
-      this.uploader.encodeSelectedFile({
-        onPreview: (src, filename) => {
-          const newItem = this.creteNewItem(src, '');
-          newItem.firstChild.firstChild.setAttribute('data-name', filename);
-          console.log(newItem.firstChild.firstChild);
-
-          newItem.firstChild.classList.add('carousel-item--empty');
-          this.list.insertBefore(newItem, this.addButton);
-        }
-      });
+    if (!this.config.endpoints.byFile) {
+      this.typeUpload = 'base64';
+      this.uploader.encodeSelectedFile();
     } else {
       // Создаем элемент
       this.uploader.uploadSelectedFile({
@@ -366,6 +393,15 @@ export default class Carousel {
           this.list.insertBefore(newItem, this.addButton);
         }
       });
+    }
+  }
+
+  uploadUrl(urls) {
+    if (!this.config.endpoints.byUrl) {
+      this.typeUpload = 'url';
+      this.uploader.setUrl(urls);
+    } else {
+      this.uploader.uploadByUrl(urls);
     }
   }
 

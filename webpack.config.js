@@ -10,11 +10,11 @@ module.exports = {
           {
             loader: 'babel-loader',
             query: {
-              presets: [ '@babel/preset-env' ]
-            }
+              presets: [ '@babel/preset-env' ],
+            },
           },
-          'eslint-loader'
-        ]
+          'eslint-loader',
+        ],
       },
       {
         test: /\.css$/,
@@ -26,17 +26,17 @@ module.exports = {
             options: {
               plugins: [
                 require('postcss-nested-ancestors'),
-                require('postcss-nested')
-              ]
-            }
-          }
-        ]
+                require('postcss-nested'),
+              ],
+            },
+          },
+        ],
       },
       {
         test: /\.svg$/,
-        loader: 'svg-inline-loader?removeSVGTagAttrs=false'
-      }
-    ]
+        loader: 'svg-inline-loader?removeSVGTagAttrs=false',
+      },
+    ],
   },
   output: {
     path: path.join(__dirname, '/dist'),
@@ -44,6 +44,6 @@ module.exports = {
     filename: 'bundle.js',
     library: 'Carousel',
     libraryTarget: 'umd',
-    libraryExport: 'default'
-  }
+    libraryExport: 'default',
+  },
 };

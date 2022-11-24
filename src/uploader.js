@@ -9,50 +9,57 @@ import ajax from '@codexteam/ajax';
 export default class Uploader {
   /**
    * @param {ImageConfig} config
-   * @param {function} onUpload - one callback for all uploading (file, url, d-n-d, pasting)
-   * @param {function} onError - callback for uploading errors
+   * @param {Function} onUpload - one callback for all uploading (file, url, d-n-d, pasting)
+   * @param {Function} onUploadAfterPreview - one callback for all uploading (file, url, d-n-d, pasting) after preview
+   * @param {Function} onError - callback for uploading errors
    */
-  constructor({ config, onUpload, onError }) {
+  constructor({ config, onUpload, onUploadAfterPreview, onError }) {
     this.config = config;
     this.onUpload = onUpload;
+    this.onUploadAfterPreview = onUploadAfterPreview;
     this.onError = onError;
   }
 
   /**
    * Handle clicks on encode file button
-   * @param {function} onPreview - callback fired when preview is ready
    */
-  encodeSelectedFile({ onPreview }) {
-    const preparePreview = function (file) {
-      const reader = new FileReader();
-
-      reader.readAsDataURL(file);
-      reader.fileName = file.name;
-      reader.onload = (e) => {
-        onPreview(e.target.result, e.target.fileName);
+  encodeSelectedFile() {
+    const upload = ajax.selectFiles({
+      accept: this.config.types,
+      multiple: this.config.multiple,
+    }).then((files) => {
+      const responseBody = {
+        success: 1,
+        files: [],
       };
-    };
 
-    ajax.selectFiles({ accept: this.config.types,multiple: this.config.multiple }).then((files) => {
       for (const file of files) {
-        preparePreview(file);
+        responseBody.files.push({ url: URL.createObjectURL(file) });
       }
+
+      return new Promise((resolve, reject) => {
+        resolve(responseBody);
+      });
+    });
+
+    upload.then((response) => {
+      this.onUpload(response);
+    }).catch((error) => {
+      this.onError(error);
     });
   }
 
   /**
    * Handle clicks on the upload file button
-   * @fires ajax.transport()
-   * @param {function} onPreview - callback fired when preview is ready
+   * Fires ajax.transport()
+   *
+   * @param {Function} onPreview - callback fired when preview is ready
    */
   uploadSelectedFile({ onPreview }) {
     const preparePreview = function (file) {
-      const reader = new FileReader();
+      const base64 = URL.createObjectURL(file);
 
-      reader.readAsDataURL(file);
-      reader.onload = (e) => {
-        onPreview(e.target.result);
-      };
+      onPreview(base64);
     };
 
     /**
@@ -63,8 +70,10 @@ export default class Uploader {
 
     // custom uploading
     if (this.config.uploader && typeof this.config.uploader.uploadByFile === 'function') {
-      upload = ajax.selectFiles({ accept: this.config.types,multiple: this.config.multiple }).then((files) => {
-
+      upload = ajax.selectFiles({
+        accept: this.config.types,
+        multiple: this.config.multiple,
+      }).then((files) => {
         for (const file of files) {
           preparePreview(file);
         }
@@ -91,30 +100,49 @@ export default class Uploader {
             preparePreview(file);
           }
         },
-        fieldName: this.config.field
+        fieldName: this.config.field,
       }).then((response) => response.body);
     }
 
     upload.then((response) => {
-      this.onUpload(response);
+      this.onUploadAfterPreview(response);
     }).catch((error) => {
       this.onError(error);
     });
   }
 
   /**
-   * Handle clicks on the upload file button
-   * @fires ajax.post()
-   * @param {string} url - image source url
+   * Handle clicks on encode file button
+   *
+   * @param urls - list files when need encode
    */
-  uploadByUrl(url) {
+  setUrl(urls) {
+    const responseBody = {
+      success: 1,
+      files: [],
+    };
+
+    for (const url of urls) {
+      responseBody.files.push({ url: url });
+    }
+
+    this.onUpload(responseBody);
+  }
+
+  /**
+   * Handle clicks on the upload file button
+   * Fires ajax.post()
+   *
+   * @param {string} urls - image source url
+   */
+  uploadByUrl(urls) {
     let upload;
 
     /**
      * Custom uploading
      */
     if (this.config.uploader && typeof this.config.uploader.uploadByUrl === 'function') {
-      upload = this.config.uploader.uploadByUrl(url);
+      upload = this.config.uploader.uploadByUrl(urls);
 
       if (!isPromise(upload)) {
         console.warn('Custom uploader method uploadByUrl should return a Promise');
@@ -126,10 +154,10 @@ export default class Uploader {
       upload = ajax.post({
         url: this.config.endpoints.byUrl,
         data: Object.assign({
-          url: url
+          url: urls,
         }, this.config.additionalRequestData),
         type: ajax.contentType.JSON,
-        headers: this.config.additionalRequestHeaders
+        headers: this.config.additionalRequestHeaders,
       }).then(response => response.body);
     }
 
@@ -142,21 +170,15 @@ export default class Uploader {
 
   /**
    * Handle clicks on the upload file button
-   * @fires ajax.post()
+   * Fires ajax.post()
+   *
    * @param {File} file - file pasted by drag-n-drop
-   * @param {function} onPreview - file pasted by drag-n-drop
+   * @param {Function} onPreview - file pasted by drag-n-drop
    */
   uploadByFile(file, { onPreview }) {
-    /**
-     * Load file for preview
-     * @type {FileReader}
-     */
-    const reader = new FileReader();
+    const base64 = URL.createObjectURL(file);
 
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      onPreview(e.target.result);
-    };
+    onPreview(base64);
 
     let upload;
 
@@ -187,7 +209,7 @@ export default class Uploader {
         url: this.config.endpoints.byFile,
         data: formData,
         type: ajax.contentType.JSON,
-        headers: this.config.additionalRequestHeaders
+        headers: this.config.additionalRequestHeaders,
       }).then(response => response.body);
     }
 
@@ -201,8 +223,9 @@ export default class Uploader {
 
 /**
  * Check if passed object is a Promise
+ *
  * @param  {*}  object - object to check
- * @return {Boolean}
+ * @returns {boolean}
  */
 function isPromise(object) {
   return Promise.resolve(object) === object;
