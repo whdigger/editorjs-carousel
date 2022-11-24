@@ -73,31 +73,35 @@ var editor = EditorJS({
 
 Image Tool supports these configuration parameters:
 
-| Field                    | Type                                                | Description                                                                                                                                                                                                          |
-|--------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| endpoints                | `{byFile: string, byUrl: string}`                   | Endpoints for file uploading. <br> Contains 2 fields: <br> __byFile__ - for file uploading <br> __byUrl__ - for uploading by URL.<br/>If not set __byFile__ file was transfer as base64 when you send submit button. |
-| field                    | `string`                                            | (default: `image`) Name of uploaded image field in POST request                                                                                                                                                      |
-| types                    | `string`                                            | (default: `image/*`) Mime-types of files that can be [accepted with file selection](https://github.com/codex-team/ajax#accept-string).                                                                               |
-| multiple                 | `boolean`                                           | (default: `false`) Get multiply download files                                                                                                                                                                       |
-| additionalRequestData    | `object`                                            | Object with any data you want to send with uploading requests                                                                                                                                                        |
-| additionalRequestHeaders | `object`                                            | Object with any custom headers which will be added to request. [See example](https://github.com/codex-team/ajax/blob/e5bc2a2391a18574c88b7ecd6508c29974c3e27f/README.md#headers-object)                              |
-| captionPlaceholder       | `string`                                            | (default: `Caption`) Placeholder for Caption input                                                                                                                                                                   |
-| buttonContent            | `string`                                            | Allows to override HTML content of «Select file» button                                                                                                                                                              |
-| uploader                 | `{{uploadByFile: function, uploadByUrl: function}}` | Optional custom uploading methods. See details below.                                                                                                                                                                |
+| Field                    | Type                                                | Description                                                                                                                                                                             |
+|--------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endpoints                | `{byFile: string, byUrl: string}`                   | Endpoints for file uploading.                                                                                                                                                           |
+| field                    | `string`                                            | (default: `image`) Name of uploaded image field in POST request                                                                                                                         |
+| types                    | `string`                                            | (default: `image/*`) Mime-types of files that can be [accepted with file selection](https://github.com/codex-team/ajax#accept-string).                                         |
+| multiple                 | `boolean`                                           | (default: `false`) Get multiply download files                                                                                                                                          |
+| additionalRequestData    | `object`                                            | Object with any data you want to send with uploading requests                                                                                                                           |
+| additionalRequestHeaders | `object`                                            | Object with any custom headers which will be added to request. [See example](https://github.com/codex-team/ajax/blob/e5bc2a2391a18574c88b7ecd6508c29974c3e27f/README.md#headers-object) |
+| captionPlaceholder       | `string`                                            | (default: `Caption`) Placeholder for Caption input                                                                                                                                      |
+| buttonContent            | `string`                                            | Allows to override HTML content of «Select file» button                                                                                                                                 |
+| uploader                 | `{{uploadByFile: function, uploadByUrl: function}}` | Optional custom uploading methods. See details below.                                                                                                                                   |
 
 Note that if you don't implement your custom uploader methods, the `endpoints` param is required.
+
+Endpoints contains 2 fields:
+* __byFile__ - for file uploading. If not set file was transfer as base64 when you send submit button.
+* __byUrl__ - for uploading by URL. If not set file was transfer as url when you send submit button.
 
 ## Output data
 
 This Tool returns `data` with following format
 
-| Field        | Type      | Description                  |
-|--------------|-----------|------------------------------|
-| file         | `object`  | Uploaded file meta data.     |
-| file.encoded | `boolean` | Encoded image in base64.     |
-| file.name    | `string`  | File name.                   |
-| url          | `string`  | Path to file or base64 text. |
-| caption      | `string`  | image's caption              |
+| Field     | Type     | Description                  |
+|-----------|----------|------------------------------|
+| file      | `object` | Uploaded file meta data.     |
+| file.type | `string` | Type upload image.           |
+| file.name | `string` | File name.                   |
+| url       | `string` | Path to file or base64 text. |
+| caption   | `string` | image's caption              |
 
 
 
@@ -108,7 +112,7 @@ This Tool returns `data` with following format
     {
       "url": "plugins/editorjs-carousel/dev/.tmp/upload_2785b3a33f8651c57e84df508adc6d3b.jpg",
       "file": {
-        "encode": false,
+        "type": "upload",
         "name": null
       },
       "caption": "Roadster // tesla.com"
