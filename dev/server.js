@@ -41,6 +41,8 @@ class ServerExample {
     });
 
     this.rootDir = process.env.ROOT_DIR || '';
+
+    console.log('rootDir: ' + this.rootDir);
   }
 
   /**

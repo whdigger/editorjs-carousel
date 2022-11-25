@@ -63,7 +63,7 @@ export default class Carousel {
       additionalRequestHeaders: config.additionalRequestHeaders || {},
       field: config.field || 'image',
       types: config.types || 'image/*',
-      multiple: config.multiple || false,
+      multiple: config.multiple || true,
       captionPlaceholder: config.captionPlaceholder || 'Caption',
       buttonContent: config.buttonContent || '',
       uploader: config.uploader || undefined
@@ -226,8 +226,7 @@ export default class Carousel {
       case 'file': {
         const file = event.detail.file;
 
-        console.log('event ', file);
-        // this.uploadFile(file);
+        this.uploadFile([file]);
         break;
       }
     }
@@ -402,6 +401,21 @@ export default class Carousel {
       this.uploader.setUrl(urls);
     } else {
       this.uploader.uploadByUrl(urls);
+    }
+  }
+
+  uploadFile(files) {
+    if (!this.config.endpoints.byUrl) {
+      this.typeUpload = 'base64';
+      this.uploader.encodeFile(files);
+    } else {
+      this.uploader.uploadByFile(files, {
+        onPreview: (src) => {
+          const newItem = this.creteNewItem('', '');
+          newItem.firstChild.lastChild.style.backgroundImage = `url(${src})`;
+          this.list.insertBefore(newItem, this.addButton);
+        }
+      });
     }
   }
 

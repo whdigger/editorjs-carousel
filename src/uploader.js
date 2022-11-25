@@ -169,24 +169,46 @@ export default class Uploader {
   }
 
   /**
+   * Handle clicks on encode file button
+   */
+  encodeFile(files) {
+    const responseBody = {
+      success: 1,
+      files: [],
+    };
+
+    for (const file of files) {
+      responseBody.files.push({ url: URL.createObjectURL(file) });
+    }
+
+    this.onUpload(responseBody);
+  }
+
+  /**
    * Handle clicks on the upload file button
    * Fires ajax.post()
    *
-   * @param {File} file - file pasted by drag-n-drop
+   * @param {File} files - file pasted by drag-n-drop
    * @param {Function} onPreview - file pasted by drag-n-drop
    */
-  uploadByFile(file, { onPreview }) {
-    const base64 = URL.createObjectURL(file);
+  uploadByFile(files, { onPreview }) {
 
-    onPreview(base64);
+    const preparePreview = function (file) {
+      const base64 = URL.createObjectURL(file);
+      onPreview(base64);
+    };
 
     let upload;
+
+    for (const file of files) {
+      preparePreview(file);
+    }
 
     /**
      * Custom uploading
      */
     if (this.config.uploader && typeof this.config.uploader.uploadByFile === 'function') {
-      upload = this.config.uploader.uploadByFile(file);
+      upload = this.config.uploader.uploadByFile(files);
 
       if (!isPromise(upload)) {
         console.warn('Custom uploader method uploadByFile should return a Promise');
@@ -197,7 +219,9 @@ export default class Uploader {
        */
       const formData = new FormData();
 
-      formData.append(this.config.field, file);
+      for (const file of files) {
+        formData.append(this.config.field + '[]', file);
+      }
 
       if (this.config.additionalRequestData && Object.keys(this.config.additionalRequestData).length) {
         Object.entries(this.config.additionalRequestData).forEach(([name, value]) => {
@@ -209,12 +233,13 @@ export default class Uploader {
         url: this.config.endpoints.byFile,
         data: formData,
         type: ajax.contentType.JSON,
+        multiple: this.config.multiple,
         headers: this.config.additionalRequestHeaders,
       }).then(response => response.body);
     }
 
     upload.then((response) => {
-      this.onUpload(response);
+      this.onUploadAfterPreview(response);
     }).catch((error) => {
       this.onError(error);
     });

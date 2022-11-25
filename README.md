@@ -11,8 +11,8 @@ Carousel/Gallery Block for the [Editor.js](https://editorjs.io).
 - Uploading file from the device
 - Preload image
 - Pasting copied content from the web
-- Pasting images by drag-n-drop
-- Pasting files and screenshots from Clipboard
+- Pasting images by drag-n-drop - not support multiply 
+- Pasting files and screenshots from Clipboard - not support multiply 
  
 **Note** This Tool requires server-side implementation for file uploading. See [backend response format](#server-format) for more details.
 
@@ -77,8 +77,8 @@ Image Tool supports these configuration parameters:
 |--------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | endpoints                | `{byFile: string, byUrl: string}`                   | Endpoints for file uploading.                                                                                                                                                           |
 | field                    | `string`                                            | (default: `image`) Name of uploaded image field in POST request                                                                                                                         |
-| types                    | `string`                                            | (default: `image/*`) Mime-types of files that can be [accepted with file selection](https://github.com/codex-team/ajax#accept-string).                                         |
-| multiple                 | `boolean`                                           | (default: `false`) Get multiply download files                                                                                                                                          |
+| types                    | `string`                                            | (default: `image/*`) Mime-types of files that can be [accepted with file selection](https://github.com/codex-team/ajax#accept-string).                                                  |
+| multiple                 | `boolean`                                           | (default: `true`) Get multiply download files                                                                                                                                           |
 | additionalRequestData    | `object`                                            | Object with any data you want to send with uploading requests                                                                                                                           |
 | additionalRequestHeaders | `object`                                            | Object with any custom headers which will be added to request. [See example](https://github.com/codex-team/ajax/blob/e5bc2a2391a18574c88b7ecd6508c29974c3e27f/README.md#headers-object) |
 | captionPlaceholder       | `string`                                            | (default: `Caption`) Placeholder for Caption input                                                                                                                                      |
@@ -104,7 +104,6 @@ This Tool returns `data` with following format
 | caption   | `string` | image's caption              |
 
 
-
 ```json
 {
   "type": "carousel",
@@ -120,6 +119,10 @@ This Tool returns `data` with following format
   ]
 }
 ```
+
+# Backend
+
+You can use the `npm run server` command for backend download service. To get the correct link with server, you need set to set the env variable for ex: `ROOT_DIR=/home/username/Project/editorJs/plugins/editorjs-carousel/`
 
 ## Backend response format <a name="server-format"></a>
 
