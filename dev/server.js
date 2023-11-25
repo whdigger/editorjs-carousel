@@ -103,7 +103,11 @@ class ServerExample {
           responseFiles.push({
             url: filePath,
             name: file.name,
-            size: file.size
+            size: file.size,
+            meta: {
+              width: 100,
+              height: 100
+            }
           });
         }
         // console.log(responseFiles);
@@ -139,7 +143,7 @@ class ServerExample {
           let filePath = path.replace(this.rootDir, '');
 
           responseFiles.push({
-            url: filePath,
+            url: filePath
           });
         }
         responseJson.success = 1;

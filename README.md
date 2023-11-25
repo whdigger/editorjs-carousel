@@ -100,6 +100,7 @@ This Tool returns `data` with following format
 | file      | `object` | Uploaded file meta data.     |
 | file.type | `string` | Type upload image.           |
 | file.name | `string` | File name.                   |
+| file.meta | `string` | File meta context.           |
 | url       | `string` | Path to file or base64 text. |
 | caption   | `string` | image's caption              |
 
@@ -112,7 +113,10 @@ This Tool returns `data` with following format
       "url": "plugins/editorjs-carousel/dev/.tmp/upload_2785b3a33f8651c57e84df508adc6d3b.jpg",
       "file": {
         "type": "upload",
-        "name": null
+        "name": null,
+        "meta": {
+          "width":100
+        }
       },
       "caption": "Roadster // tesla.com"
     }

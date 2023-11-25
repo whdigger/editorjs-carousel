@@ -164,14 +164,16 @@ export default class Carousel {
     if (list.length > 0) {
       for (const item of list) {
         if (item.firstChild.value) {
-          data.push({
+          let info = {
             url: item.firstChild.value,
             file: {
               type: item.firstChild.getAttribute('data-type'),
               name: item.firstChild.getAttribute('data-name'),
+              meta: JSON.parse(item.firstChild.getAttribute('data-meta'))
             },
             caption: item.lastChild.value
-          });
+          };
+          data.push(info);
         }
       }
     }
@@ -329,6 +331,13 @@ export default class Carousel {
         this.list.childNodes[lastElem].firstChild.childNodes[2].style.backgroundImage = '';
         this.list.childNodes[lastElem].firstChild.firstChild.value = file.url;
         this.list.childNodes[lastElem].firstChild.classList.add('carousel-item--empty');
+        console.log(file);
+        if (file.meta) {
+          this.list.childNodes[lastElem].firstChild.firstChild.setAttribute('data-meta', JSON.stringify(file.meta));
+        }
+        if (file.name) {
+          this.list.childNodes[lastElem].firstChild.firstChild.setAttribute('data-name', file.name);
+        }
       }
     } else {
       this.uploadingFailed('incorrect response: ' + JSON.stringify(response));
@@ -348,6 +357,9 @@ export default class Carousel {
         const newItem = this.creteNewItem(file.url, '');
         if (file.name) {
           newItem.firstChild.firstChild.setAttribute('data-name', file.name);
+        }
+        if (file.meta) {
+          newItem.firstChild.firstChild.setAttribute('data-meta', JSON.stringify(file.meta));
         }
         newItem.firstChild.classList.add('carousel-item--empty');
         this.list.insertBefore(newItem, this.addButton);
